@@ -14,8 +14,19 @@ const bookRoutes = require('./routes/bookRoutes');
 // Initialize Express app
 const app = express();
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB and start server only after successful connection.
+// Wrap in an async IIFE so we can await the connection and handle errors
+// gracefully without crashing serverless runtimes.
+(async () => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error('Failed to connect to DB during startup:', err.message || err);
+    // Do not call process.exit here — allow the host to handle retries.
+    // If desired, you can rethrow to fail the deployment or return.
+    return;
+  }
+})();
 
 // ==================== Middleware ====================
 
@@ -94,7 +105,9 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// Only start listening if this file is run directly (not required/imported)
+if (require.main === module) {
+  app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║     Book Catalog API Started            ║
@@ -104,6 +117,7 @@ app.listen(PORT, () => {
 ║     API URL: http://localhost:${PORT} ║
 ╚════════════════════════════════════════╝
   `);
-});
+  });
+}
 
 module.exports = app;

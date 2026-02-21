@@ -27,6 +27,9 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Normalize email for consistent lookups
+    const normalizedEmail = email && typeof email === 'string' ? email.toLowerCase().trim() : email;
+
     // Validate input
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -36,7 +39,7 @@ exports.register = async (req, res) => {
     }
 
     // Check if user already exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({
         success: false,
@@ -44,10 +47,10 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new user
+    // Create new user (store normalized email)
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
     });
 
@@ -86,6 +89,9 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Normalize email to match stored value
+    const normalizedEmail = email && typeof email === 'string' ? email.toLowerCase().trim() : email;
+
     // Validate input
     if (!email || !password) {
       return res.status(400).json({
@@ -95,7 +101,7 @@ exports.login = async (req, res) => {
     }
 
     // Find user and include password field
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
     // Check if user exists
     if (!user) {

@@ -20,7 +20,9 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error(`✗ MongoDB Connection Error: ${error.message}`);
-    process.exit(1);
+    // Throw error instead of exiting process so serverless platforms
+    // (Vercel, AWS Lambda, etc.) don't terminate the entire runtime.
+    throw error;
   }
 };
 
